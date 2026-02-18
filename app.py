@@ -35,7 +35,6 @@ menu = st.sidebar.selectbox(
 )
 
 
-
 # ADD PATIENT
 if menu == "Add Patient":
 
