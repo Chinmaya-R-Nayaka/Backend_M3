@@ -66,7 +66,44 @@ if menu == "Add Patient":
 # ADD GROWTH
 elif menu == "Add Growth Record":
 
-        # Sujitha Write ur Logic here
+    st.header("Add Growth Record")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        patient_name = st.text_input("Patient Name")
+        height = st.number_input("Height (cm)", min_value=0.0)
+        weight = st.number_input("Weight (kg)", min_value=0.0)
+
+    with col2:
+        head_circumference = st.number_input("Head Circumference (cm)", min_value=0.0)
+        measurement_date = st.date_input("Measurement Date")
+
+    if st.button("Save Growth Record"):
+
+        # Calculate BMI
+        if height > 0:
+            bmi = weight / ((height / 100) ** 2)
+        else:
+            bmi = 0
+
+        if bmi < 18:
+            alert = "Underweight"
+        elif bmi > 25:
+            alert = "Overweight"
+        else:
+            alert = "Normal"
+
+        growth_col.insert_one({
+            "patient_name": patient_name,
+            "height": height,
+            "weight": weight,
+            "head_circumference": head_circumference,
+            "bmi": round(bmi, 2),
+            "alert": alert,
+            "measurement_date": measurement_date.strftime("%Y-%m-%d"),
+            "created_at": datetime.now()
+        })
     
         st.success("Growth record added successfully.")
 
@@ -89,15 +126,29 @@ elif menu == "Add Milestone":
         st.success("Milestone saved successfully.")
 
 
-# Uncomment this part and write ur code 
-# # VIEW PATIENTS
-# elif menu == "View Patients":
+# VIEW PATIENTS
+elif menu == "View Patients":
 
-#     # Sujitha Write ur Logic here
-#     st.dataframe()
+    st.header("All Pediatric Patients")
+    patients=list(patients_col.find())
+    if patients:
+        for patient in patients:
+            patient.pop("_id")
+        st.dataframe(patients)
+    else:
+        st.warning("No Patients found.")
 
 
-# # VIEW ALERTS
-# elif menu == "View Alerts":
+# VIEW ALERTS
+elif menu == "View Alerts":
 
-#     # Sujitha Write ur Logic here
+    st.header("Growth Alerts")
+
+    alerts=list(growth_col.find({"alert":{"$ne":"Normal"}}))
+    if alerts:
+        for record in alerts:
+            record.pop("_id")
+        st.dataframe(alerts)
+    else:
+        st.success("No alerts found.All children are normal.")
+     
