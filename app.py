@@ -112,29 +112,120 @@ elif menu == "Add Growth Record":
 # ADD IMMUNIZATION
 elif menu == "Add Immunization":
 
-        # Enosh Write ur Logic here
+
+    st.header("Add Immunization")
+
+    patients = list(patients_col.find())
+
+    if not patients:
+        st.warning("No patients found. Please add patient first.")
+
+    else:
+        patient_dict = {p["name"]: p for p in patients}
+        selected_patient = st.selectbox("Select Patient", list(patient_dict.keys()))
+
+        vaccine = st.text_input("Vaccine Name")
+        given_date = st.date_input("Date Given")
+
+        if st.button("Save Immunization"):
+
+            patient = patient_dict[selected_patient]
+            patient_id = patient["_id"]
+
+            dob = datetime.strptime(patient["dob"], "%Y-%m-%d").date()
+            age_months = (given_date - dob).days / 30.44
+
+            delay = check_immunization_delay(vaccine, given_date, patient["dob"])
+
+            immunization_col.insert_one({
+                "patient_id": patient_id,
+                "patient_name": selected_patient,
+                "vaccine": vaccine,
+                "date_given": given_date.strftime("%Y-%m-%d"),
+                "age_months": round(age_months,1),
+                "delay": delay,
+                "created_at": datetime.now()
+            })
+
+            if delay:
+                alert_col.insert_one({
+                    "patient_name": selected_patient,
+                    "type": "Immunization Delay",
+                    "message": f"{vaccine} vaccine delayed",
+                    "created_at": datetime.now()
+                })
+
+                st.warning("Immunization delay detected")
+
+            
 
         st.success("Immunization saved successfully.")
-
-
 
 # ADD MILESTONE
 elif menu == "Add Milestone":
 
-        # Enosh Write ur Logic here
+       
+
+    st.header("Add Development Milestone")
+
+    patients = list(patients_col.find())
+
+    if not patients:
+        st.warning("No patients found. Please add patient first.")
+
+    else:
+        patient_dict = {p["name"]: p for p in patients}
+        selected_patient = st.selectbox("Select Patient", list(patient_dict.keys()))
+
+        milestone = st.text_input("Milestone Name")
+        achieved_age = st.number_input("Age Achieved (months)", min_value=0)
+
+        if st.button("Save Milestone"):
+
+            patient = patient_dict[selected_patient]
+            patient_id = patient["_id"]
+
+            delay = check_milestone_delay(milestone, achieved_age)
+
+            milestone_col.insert_one({
+                "patient_id": patient_id,
+                "patient_name": selected_patient,
+                "milestone": milestone,
+                "achieved_age_months": achieved_age,
+                "delay": delay,
+                "created_at": datetime.now()
+            })
+
+            if delay:
+                alert_col.insert_one({
+                    "patient_name": selected_patient,
+                    "type": "Milestone Delay",
+                    "message": f"{milestone} milestone delayed",
+                    "created_at": datetime.now()
+                })
+
+                st.warning("Milestone delay detected")
+
+        
     
         st.success("Milestone saved successfully.")
 
 
+
+# VIEW PATIENTS
 # VIEW PATIENTS
 elif menu == "View Patients":
 
     st.header("All Pediatric Patients")
-    patients=list(patients_col.find())
+
+    patients = list(patients_col.find())
+
     if patients:
         for patient in patients:
-            patient.pop("_id")
+            patient.pop("_id")   # remove MongoDB object id
+
         st.dataframe(patients)
+
     else:
         st.warning("No Patients found.")
 
@@ -144,11 +235,13 @@ elif menu == "View Alerts":
 
     st.header("Growth Alerts")
 
-    alerts=list(growth_col.find({"alert":{"$ne":"Normal"}}))
+    alerts = list(growth_col.find({"alert": {"$ne": "Normal"}}))
+
     if alerts:
         for record in alerts:
             record.pop("_id")
+
         st.dataframe(alerts)
+
     else:
-        st.success("No alerts found.All children are normal.")
-     
+        st.success("No alerts found. All children are normal.")
